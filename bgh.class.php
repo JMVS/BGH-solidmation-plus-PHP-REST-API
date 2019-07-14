@@ -13,10 +13,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 error_reporting(E_ERROR | E_PARSE);
 
-ini_set('display_startup_errors', 1);
-ini_set('display_errors', 1);
-error_reporting(-1);
-
 function get($url, $data, $method = "GET", $content = "normal", $cookies = false) {
 	$options = array(
 		'http' => array(
