@@ -1,5 +1,6 @@
 # BGH & Solidmation Plus PHP REST API
-Solidmation &amp;amp; BGH Smart Control Kit PHP REST API for HVAC (air conditioner)
+Solidmation / BGH Smart Control Kit PHP REST API for HVAC (air conditioner)
+
 Based on https://github.com/JoanManuelH/BHG-solidmation-PHP-REST-API
 
 ## Usage
