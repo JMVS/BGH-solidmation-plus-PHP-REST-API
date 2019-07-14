@@ -13,6 +13,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 error_reporting(E_ERROR | E_PARSE);
 
+ini_set('display_startup_errors', 1);
+ini_set('display_errors', 1);
+error_reporting(-1);
+
 function get($url, $data, $method = "GET", $content = "normal", $cookies = false) {
 	$options = array(
 		'http' => array(
@@ -105,21 +109,37 @@ class BGH {
 		$mode = !is_blank(array_search(strtolower($ops["mode"]), $modes)) ? array_search(strtolower($ops["mode"]), $modes) : 1; // default on
 		$subc = $ops["subcommand"] ? $ops["subcommand"] : 0;
 		$endpoint = $ops['endpoint'] ? $ops['endpoint'] : $this->getDevices()[0]['endpointID']; // default first device
-		$turnData1 = '{"token":{"Token":"'.$this->returnToken().'"},"endpointID":'.$endpoint.',"desiredTempC":"'.$temperature.'","mode":"'.$mode.'","fanMode":"'.$fan.'","flags":255}';
-		$turnData2 = '{"token":{"Token":"'.$this->returnToken().'"},"endpointID":'.$endpoint.',"subCommand":'.$subc.'}';
-		$response1 = get("https://bgh-services.solidmation.com/1.0/HomeCloudCommandService.svc/HVACSetModes", json_decode($turnData1), "POST", "json");
-		$response2 = get("https://bgh-services.solidmation.com/1.0/HomeCloudCommandService.svc/HVACSendCommand", json_decode($turnData2), "POST", "json");
+		$turnData = '{"token":{"Token":"'.$this->returnToken().'"},"endpointID":'.$endpoint.',"desiredTempC":"'.$temperature.'","mode":"'.$mode.'","fanMode":"'.$fan.'","flags":255}';
+		$response = get("https://bgh-services.solidmation.com/1.0/HomeCloudCommandService.svc/HVACSetModes", json_decode($turnData), "POST", "json");
+		$scopt = array('subcommand' => $subc,'endpoint' => $endpoint);
+		$response2 = $this->sendSubCommand($scopt);
 		
-		return $response1['HVACSetModesResult']['Result'] || $response2['HVACSendCommandResult']['Result'];
+		return $response['HVACSetModesResult']['Result'] || $response2;
 	}
 	
 	public function sendSubCommand($ops) {
 		$subc = $ops["subcommand"] ? $ops["subcommand"] : 0;
-		$endpoint = $ops['endpoint'] ? $ops['endpoint'] : $this->getDevices()[0]['endpointID'];
+		$endpoint = $ops['endpoint'] ? $ops['endpoint'] : $this->getDevices()[0]['endpointID'];  // default first device
 		$turnData = '{"token":{"Token":"'.$this->returnToken().'"},"endpointID":'.$endpoint.',"subCommand":'.$subc.'}';
 		$response = get("https://bgh-services.solidmation.com/1.0/HomeCloudCommandService.svc/HVACSendCommand", json_decode($turnData), "POST", "json");
 		
 		return $response['HVACSendCommandResult']['Result'];
+	}
+	
+	public function getTemperature($endpoint) {
+		$endpoint = $endpoint ? $endpoint : $this->getDevices()[0]['endpointID']; // default first device
+		$roomtemp = $this->getDevices()[array_search($endpoint, array_column($this->getDevices(), 'endpointID'))]['room'];
+		if(!$roomtemp) throw new Exception('Value not available.');
+		
+		return $roomtemp;
+	}
+	
+	public function getCurrentMode($endpoint) {
+		$modes = ["off","cold","heat","dehum","vent",254=>"auto"]; // available modes
+		$endpoint = $endpoint ? $endpoint : $this->getDevices()[0]['endpointID']; // default first device
+		$mode = $modes[$this->getDevices()[array_search($endpoint, array_column($this->getDevices(), 'endpointID'))]['turned']];
+		
+		return $mode;
 	}
 }
 ?>
